@@ -20,16 +20,26 @@ public:
     }
 };
 
-
 stack<card> table[10];
 stack<card> stockpile;
 
+void makecards() {
+
+    for (int s = 0; s < 8; s++) {
+        for (int v = 1; v <= 13; v++) {
+            card c(v, false);
+            stockpile.push(c);
+        }
+    }
+}
+
 int main() {
     cout << "spider solitaire - stack version" << endl;
-    cout << "using classes and stacks" << endl;
 
-    cout << "columns created: 10" << endl;
-    cout << "stock is empty for now" << endl;
+    makecards();
+
+    cout << "cards created in stockpile" << endl;
+    cout << "total cards: " << stockpile.size() << endl;
 
     return 0;
 }
