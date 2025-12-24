@@ -56,14 +56,36 @@ void shufflecards() {
     }
 }
 
+void initialdeal() {
+    for (int col = 0; col < 10; col++) {
+        int cards;
+
+        if (col < 4)
+            cards = 6;
+        else
+            cards = 5;
+
+        for (int i = 0; i < cards; i++) {
+            card c = stockpile.top();
+            stockpile.pop();
+            table[col].push(c);
+        }
+
+        if (!table[col].empty()) {
+            table[col].top().faceup = true;
+        }
+    }
+}
+
 int main() {
     cout << "spider solitaire - stack version" << endl;
 
     makecards();
     shufflecards();
+    initialdeal();
 
-    cout << "cards shuffled" << endl;
-    cout << "total cards: " << stockpile.size() << endl;
+    cout << "cards dealt to table" << endl;
+    cout << "remaining cards in stock: " << stockpile.size() << endl;
 
     return 0;
 }
