@@ -28,8 +28,7 @@ stack<card> stockpile;
 void makecards() {
     for (int s = 0; s < 8; s++) {
         for (int v = 1; v <= 13; v++) {
-            card c(v, false);
-            stockpile.push(c);
+            stockpile.push(card(v, false));
         }
     }
 }
@@ -46,9 +45,9 @@ void shufflecards() {
 
     for (int i = 0; i < temp.size(); i++) {
         int r = rand() % temp.size();
-        card t = temp[i];
+        card x = temp[i];
         temp[i] = temp[r];
-        temp[r] = t;
+        temp[r] = x;
     }
 
     for (int i = 0; i < temp.size(); i++) {
@@ -58,17 +57,11 @@ void shufflecards() {
 
 void initialdeal() {
     for (int col = 0; col < 10; col++) {
-        int cards;
-
-        if (col < 4)
-            cards = 6;
-        else
-            cards = 5;
+        int cards = (col < 4) ? 6 : 5;
 
         for (int i = 0; i < cards; i++) {
-            card c = stockpile.top();
+            table[col].push(stockpile.top());
             stockpile.pop();
-            table[col].push(c);
         }
 
         if (!table[col].empty()) {
@@ -77,15 +70,35 @@ void initialdeal() {
     }
 }
 
+void showtable() {
+    cout << "\n--- table state ---\n";
+
+    for (int i = 0; i < 10; i++) {
+        cout << "col " << i << ": ";
+
+        stack<card> temp = table[i];
+
+        while (!temp.empty()) {
+            card c = temp.top();
+            temp.pop();
+
+            if (c.faceup)
+                cout << c.value << " ";
+            else
+                cout << "X ";
+        }
+        cout << endl;
+    }
+}
+
 int main() {
-    cout << "spider solitaire - stack version" << endl;
+    cout << "spider solitaire\n";
 
     makecards();
     shufflecards();
     initialdeal();
+    showtable();
 
-    cout << "cards dealt to table" << endl;
-    cout << "remaining cards in stock: " << stockpile.size() << endl;
-
+    cout << "\nstock left: " << stockpile.size() << endl;
     return 0;
 }
