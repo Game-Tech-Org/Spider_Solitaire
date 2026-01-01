@@ -31,4 +31,4 @@ public:
         cout << "Stock: " << cards.size() / 10 << " deals remaining" << endl;
     }
 };// Updated by breera at Fri Dec 26 22:18:51 PST 2025
-"// Updated by breera - $(date)" 
+// Updated by breera - $(date)
