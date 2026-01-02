@@ -1,5 +1,5 @@
 #include <iostream>
-#include <cstdlib>
+
 #include <ctime>
 
 using namespace std;
@@ -17,37 +17,21 @@ public:
         ptr = new t[siz];
     }
 
-    bool isempty() {
-        return top == -1;
-    }
-
-    bool isfull() {
-        return top == siz - 1;
-    }
+    bool isempty() { return top == -1; }
+    bool isfull() { return top == siz - 1; }
 
     void push(t var) {
-        if (isfull()) {
-            cout << "stack full\n";
-            return;
-        }
+        if (isfull()) return;
         ptr[++top] = var;
     }
 
     t pop() {
-        if (isempty()) {
-            cout << "stack empty\n";
-            return ptr[0];
-        }
+        if (isempty()) return ptr[0];
         return ptr[top--];
     }
 
-    t Top() {
-        return ptr[top];
-    }
-
-    int count() {
-        return top + 1;
-    }
+    t Top() { return ptr[top]; }
+    int count() { return top + 1; }
 };
 
 class card {
@@ -68,16 +52,14 @@ public:
 
 stackk<card> table[10];
 stackk<card> stockpile(150);
-
 int stockcount = 0;
 
 void makecards() {
-    for (int s = 0; s < 8; s++) {
+    for (int s = 0; s < 8; s++)
         for (int v = 1; v <= 13; v++) {
             stockpile.push(card(v, false));
             stockcount++;
         }
-    }
 }
 
 void shufflecards() {
@@ -109,45 +91,44 @@ void initialdeal() {
         int cards = (col < 4) ? 6 : 5;
 
         for (int i = 0; i < cards; i++) {
-            card c = stockpile.pop();
+            table[col].push(stockpile.pop());
             stockcount--;
-            table[col].push(c);
         }
 
-        card topc = table[col].pop();
-        topc.faceup = true;
-        table[col].push(topc);
+        card t = table[col].pop();
+        t.faceup = true;
+        table[col].push(t);
     }
 }
 
 void showtable() {
     cout << "\n--- table ---\n";
-
     for (int i = 0; i < 10; i++) {
         cout << i << ": ";
         stackk<card> temp = table[i];
-
         while (!temp.isempty()) {
             card c = temp.pop();
-            if (c.faceup)
-                cout << c.value << " ";
-            else
-                cout << "X ";
+            cout << (c.faceup ? to_string(c.value) : "X") << " ";
         }
         cout << endl;
     }
-
     cout << "stock left: " << stockcount << endl;
 }
 
 void movecard(int from, int to) {
-    if (table[from].isempty()) {
-        cout << "nothing to move\n";
-        return;
+    if (table[from].isempty()) return;
+
+    card moving = table[from].Top();
+
+    if (!table[to].isempty()) {
+        card dest = table[to].Top();
+        if (dest.value != moving.value + 1) {
+            cout << "invalid move\n";
+            return;
+        }
     }
 
-    card c = table[from].pop();
-    table[to].push(c);
+    table[to].push(table[from].pop());
 
     if (!table[from].isempty()) {
         card t = table[from].pop();
@@ -157,11 +138,7 @@ void movecard(int from, int to) {
 }
 
 void dealmore() {
-    if (stockcount < 10) {
-        cout << "not enough stock\n";
-        return;
-    }
-
+    if (stockcount < 10) return;
     for (int i = 0; i < 10; i++) {
         card c = stockpile.pop();
         stockcount--;
@@ -176,28 +153,18 @@ int main() {
     initialdeal();
 
     char ch;
-
     while (true) {
         showtable();
-
-        cout << "\nm = move, d = deal, q = quit\n";
         cin >> ch;
 
         if (ch == 'm') {
             int a, b;
-            cout << "from: ";
-            cin >> a;
-            cout << "to: ";
-            cin >> b;
+            cin >> a >> b;
             movecard(a, b);
-        }
-        else if (ch == 'd') {
+        } else if (ch == 'd') {
             dealmore();
-        }
-        else if (ch == 'q') {
+        } else if (ch == 'q') {
             break;
         }
     }
-
-    return 0;
 }
