@@ -24,30 +24,17 @@ public:
         return false;
     }
 
-    bool isfull()
-    {
-        if (top == siz - 1)
-            return true;
-        return false;
-    }
-
     void push(t var)
     {
-        if (isfull())
-            return;
-
         top = top + 1;
         ptr[top] = var;
     }
 
     t pop()
     {
-        if (isempty())
-            return ptr[0];
-
-        t val = ptr[top];
+        t v = ptr[top];
         top = top - 1;
-        return val;
+        return v;
     }
 
     t Top()
@@ -83,72 +70,7 @@ public:
 stackk<card> table[10];
 stackk<card> stockpile(150);
 int stockcount = 0;
-
-void makecards()
-{
-    for (int set = 0; set < 8; set++)
-    {
-        for (int val = 1; val <= 13; val++)
-        {
-            card c(val, false);
-            stockpile.push(c);
-            stockcount = stockcount + 1;
-        }
-    }
-}
-
-void shufflecards()
-{
-    card temp[150];
-    int index = 0;
-
-    while (!stockpile.isempty())
-    {
-        temp[index] = stockpile.pop();
-        index = index + 1;
-        stockcount = stockcount - 1;
-    }
-
-    srand(time(0));
-
-    for (int i = 0; i < index; i++)
-    {
-        int r = rand() % index;
-        card swap = temp[i];
-        temp[i] = temp[r];
-        temp[r] = swap;
-    }
-
-    for (int i = 0; i < index; i++)
-    {
-        stockpile.push(temp[i]);
-        stockcount = stockcount + 1;
-    }
-}
-
-void initialdeal()
-{
-    for (int col = 0; col < 10; col++)
-    {
-        int dealcount;
-
-        if (col < 4)
-            dealcount = 6;
-        else
-            dealcount = 5;
-
-        for (int i = 0; i < dealcount; i++)
-        {
-            card c = stockpile.pop();
-            table[col].push(c);
-            stockcount = stockcount - 1;
-        }
-
-        card topcard = table[col].pop();
-        topcard.faceup = true;
-        table[col].push(topcard);
-    }
-}
+int completed = 0;
 
 void printcard(card c)
 {
@@ -158,10 +80,60 @@ void printcard(card c)
         cout << "X ";
 }
 
+void checksequence(int col)
+{
+    if (table[col].count() < 13)
+        return;
+
+    stackk<card> temp;
+
+    for (int i = 0; i < 13; i++)
+    {
+        card c = table[col].pop();
+        temp.push(c);
+    }
+
+    bool correct = true;
+
+    int expected = 13;
+
+    while (!temp.isempty())
+    {
+        card c = temp.pop();
+
+        if (c.faceup == false)
+            correct = false;
+
+        if (c.value != expected)
+            correct = false;
+
+        expected = expected - 1;
+    }
+
+    if (correct == true)
+    {
+        completed = completed + 1;
+    }
+    else
+    {
+        for (int i = 0; i < 13; i++)
+        {
+            table[col].push(temp.pop());
+        }
+    }
+
+    if (!table[col].isempty())
+    {
+        card t = table[col].pop();
+        t.faceup = true;
+        table[col].push(t);
+    }
+}
+
 void showtable()
 {
     cout << endl;
-    cout << "---------------- TABLE ----------------" << endl;
+    cout << "------------- TABLE STATUS -------------" << endl;
 
     for (int i = 0; i < 10; i++)
     {
@@ -179,38 +151,26 @@ void showtable()
     }
 
     cout << endl;
+    cout << "Completed Sets : " << completed << " / 8" << endl;
     cout << "Stock Remaining : " << stockcount << endl;
     cout << endl;
 }
 
-bool validmove(int from, int to)
+void movecard(int from, int to)
 {
     if (table[from].isempty())
-        return false;
+        return;
 
     card moving = table[from].Top();
 
     if (!table[to].isempty())
     {
         card dest = table[to].Top();
-
         if (dest.value != moving.value + 1)
-            return false;
+            return;
     }
 
-    return true;
-}
-
-void movecard(int from, int to)
-{
-    if (!validmove(from, to))
-    {
-        cout << "Invalid Move" << endl;
-        return;
-    }
-
-    card c = table[from].pop();
-    table[to].push(c);
+    table[to].push(table[from].pop());
 
     if (!table[from].isempty())
     {
@@ -218,58 +178,34 @@ void movecard(int from, int to)
         t.faceup = true;
         table[from].push(t);
     }
-}
 
-void dealmore()
-{
-    if (stockcount < 10)
-    {
-        cout << "Not enough cards in stock" << endl;
-        return;
-    }
-
-    for (int i = 0; i < 10; i++)
-    {
-        card c = stockpile.pop();
-        c.faceup = true;
-        table[i].push(c);
-        stockcount = stockcount - 1;
-    }
-}
-
-void showmenu()
-{
-    cout << "Press m to move card" << endl;
-    cout << "Press d to deal more cards" << endl;
-    cout << "Press q to quit" << endl;
+    checksequence(to);
 }
 
 int main()
 {
-    makecards();
-    shufflecards();
-    initialdeal();
-
-    char choice;
+    cout << "Spider Solitaire Started" << endl;
 
     while (true)
     {
         showtable();
-        showmenu();
 
-        cin >> choice;
+        if (completed == 8)
+        {
+            cout << "YOU WON THE GAME" << endl;
+            break;
+        }
 
-        if (choice == 'm')
+        char ch;
+        cin >> ch;
+
+        if (ch == 'm')
         {
             int a, b;
             cin >> a >> b;
             movecard(a, b);
         }
-        else if (choice == 'd')
-        {
-            dealmore();
-        }
-        else if (choice == 'q')
+        else if (ch == 'q')
         {
             break;
         }
