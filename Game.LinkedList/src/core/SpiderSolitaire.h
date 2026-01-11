@@ -3,191 +3,324 @@
 #include <cstdlib>
 #include "Column.h"
 #include "StockPile.h"
+#include "raylib.h"
+#include <iostream>
+#include <fstream>
+#include <ctime>
+#include <cstdlib>
+#include <string>
+
+void DrawTextWithShadow(const char* text, int x, int y, int size, Color shadow, Color main) {
+    DrawText(text, x+2, y+2, size, shadow);
+    DrawText(text, x, y, size, main);
+}
 
 class SpiderSolitaire {
 private:
     Column columns[10];
     StockPile stock;
-    int completedSequences;
-
+    int completedSeq, moves, selCol, selCard;
+    bool gameWon;
+    string msg;
+    float msgTimer;
+    Texture2D cardImg[13], cardBack, bg;
+    
     void createDeck() {
-        LinkedList<Card> allCards;
+        LinkedList<Card> all;
         
-        // Create 8 decks (104 cards total)
         for (int deck = 0; deck < 8; deck++) {
             for (int rank = 1; rank <= 13; rank++) {
-                allCards.insertAtTail(Card(rank));
+                all.insertAtTail(Card(rank, 3));
             }
         }
-
-        // Shuffle using Fisher-Yates algorithm
-        for (int i = allCards.size() - 1; i > 0; i--) {
-            int j = rand() % (i + 1);
-            
-            Node<Card>* nodeI = allCards.getNodeAt(i);
-            Node<Card>* nodeJ = allCards.getNodeAt(j);
-            
-            if (nodeI && nodeJ) {
-                Card temp = nodeI->data;
-                nodeI->data = nodeJ->data;
-                nodeJ->data = temp;
+        
+        for (int i = all.size()-1; i > 0; i--) {
+            int j = rand()%(i+1);
+            Node<Card>* ni = all.getNodeAt(i);
+            Node<Card>* nj = all.getNodeAt(j);
+            if (ni && nj) { 
+                Card t = ni->data; 
+                ni->data = nj->data; 
+                nj->data = t; 
             }
         }
-
-        // Deal 54 cards to columns
-        for (int col = 0; col < 10; col++) {
-            int numCards = (col < 4) ? 6 : 5;
+        
+        for (int c = 0; c < 10; c++) {
+            int numCards = (c < 4) ? 6 : 5;
             for (int i = 0; i < numCards; i++) {
-                Card c = allCards.getFront();
-                allCards.deleteFromBeginning();
-                columns[col].addCard(c);
+                columns[c].addCard(all.getFront());
+                all.deleteFromBeginning();
             }
-            columns[col].flipTopCard();
+            columns[c].flipTopCard();
         }
-
-        // Remaining 50 cards to stock
-        while (!allCards.isEmpty()) {
-            Card c = allCards.getFront();
-            allCards.deleteFromBeginning();
-            stock.addCard(c);
+        
+        while (!all.isEmpty()) {
+            stock.addCard(all.getFront());
+            all.deleteFromBeginning();
         }
     }
-
+    
 public:
-    SpiderSolitaire() : completedSequences(0) {
+    SpiderSolitaire() : completedSeq(0), moves(0), gameWon(false), 
+                        selCol(-1), selCard(-1), msgTimer(0) {
         srand(time(0));
+    }
+    
+    void loadImages() {
+        string rankNames[] = {"Ace", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"};
+        
+        for (int rank = 0; rank < 13; rank++) {
+            string filename = "Deck Images/Spade " + rankNames[rank] + ".jpeg";
+            Image img = LoadImage(filename.c_str());
+            if (img.data) {
+                cardImg[rank] = LoadTextureFromImage(img);
+                UnloadImage(img);
+            } else {
+                cardImg[rank].id = 0;
+            }
+        }
+        
+        Image back = LoadImage("Deck Images/card_back.jpeg");
+        if (!back.data) back = LoadImage("Deck Images/back.jpeg");
+        if (!back.data) back = GenImageColor(70, 90, DARKBLUE);
+        cardBack = LoadTextureFromImage(back);
+        UnloadImage(back);
+        
+        Image bgImg = LoadImage("Deck Images/background.jpeg");
+        if (!bgImg.data) bgImg = GenImageColor(1020, 750, Color{34,139,34,255});
+        bg = LoadTextureFromImage(bgImg);
+        UnloadImage(bgImg);
+    }
+    
+    void unloadImages() {
+        for (int i = 0; i < 13; i++) 
+            if (cardImg[i].id) UnloadTexture(cardImg[i]);
+        UnloadTexture(cardBack);
+        UnloadTexture(bg);
+    }
+    
+    void newGame() {
+        for (int i = 0; i < 10; i++) columns[i] = Column();
+        stock = StockPile();
+        completedSeq = moves = 0;
+        gameWon = false;
+        selCol = selCard = -1;
         createDeck();
+        msg = "New game started! Build K-A sequences to win.";
+        msgTimer = 3;
     }
-
-    void displayGame() {
-        cout << "\n========================================\n";
-        cout << "        SPIDER SOLITAIRE\n";
-        cout << "========================================\n";
-        cout << "Completed Sequences: " << completedSequences << "/8\n";
-        stock.display();
-        cout << "----------------------------------------\n";
-
-        for (int i = 0; i < 10; i++) {
-            columns[i].display(i + 1);
-        }
-        cout << "========================================\n";
+    
+    bool save() {
+        ofstream f("savegame.dat");
+        if (!f) return false;
+        f << completedSeq << " " << moves << " " << gameWon << endl;
+        for (int i = 0; i < 10; i++) { columns[i].save(f); f << endl; }
+        stock.save(f);
+        f.close();
+        return true;
     }
-
-    bool isGameWon() {
-        return completedSequences == 8;
+    
+    bool load() {
+        ifstream f("savegame.dat");
+        if (!f) return false;
+        for (int i = 0; i < 10; i++) columns[i] = Column();
+        stock = StockPile();
+        f >> completedSeq >> moves >> gameWon;
+        for (int i = 0; i < 10; i++) columns[i].load(f);
+        stock.load(f);
+        f.close();
+        selCol = selCard = -1;
+        msg = "Game loaded successfully!";
+        msgTimer = 2;
+        return true;
     }
-
+    
     void dealFromStock() {
-        if (stock.isEmpty()) {
-            cout << "No cards left in stock!\n";
-            return;
+        if (stock.isEmpty()) { 
+            msg = "Stock is empty!"; 
+            msgTimer = 2; 
+            return; 
         }
-
-        if (stock.size() < 10) {
-            cout << "Not enough cards to deal!\n";
-            return;
+        
+        if (stock.size() < 10) { 
+            msg = "Need at least 10 cards to deal!"; 
+            msgTimer = 2; 
+            return; 
         }
-
+        
         for (int i = 0; i < 10; i++) {
             Card c = stock.drawCard();
             c.flip();
             columns[i].addCard(c);
         }
-
-        cout << "Dealt 10 cards from stock!\n";
+        
+        checkComplete();
+        msg = "Cards dealt from stock!";
+        msgTimer = 2;
+        moves++;
     }
-
-    void moveCards(int fromCol, int toCol, int numCards) {
-        fromCol--;
-        toCol--;
-
-        if (fromCol < 0 || fromCol >= 10 || toCol < 0 || toCol >= 10) {
-            cout << "Invalid column numbers!\n";
-            return;
+    
+    void moveCards(int from, int to, int numCards) {
+        if (from == to || from < 0 || to < 0 || from >= 10 || to >= 10) return;
+        
+        int startIdx = columns[from].size() - numCards;
+        if (startIdx < 0) { 
+            msg = "Not enough cards to move!"; 
+            msgTimer = 2; 
+            return; 
         }
-
-        if (fromCol == toCol) {
-            cout << "Cannot move to the same column!\n";
-            return;
+        
+        if (!columns[from].isValidSequence(startIdx)) { 
+            msg = "Invalid sequence! Cards must be descending."; 
+            msgTimer = 2; 
+            return; 
         }
-
-        if (columns[fromCol].isEmpty()) {
-            cout << "Source column is empty!\n";
-            return;
+        
+        Card movingCard = columns[from].getCardAt(startIdx);
+        
+        if (columns[to].isEmpty()) {
+            LinkedList<Card> cards = columns[from].removeCards(startIdx);
+            columns[from].removeCardsRange(startIdx);
+            columns[to].addCards(cards);
+            columns[from].flipTopCard();
+            moves++;
+            checkComplete();
+        } else {
+            Card targetCard = columns[to].getTopCard();
+            if (!movingCard.canPlaceOn(targetCard)) { 
+                msg = "Cannot place! Card must be 1 rank lower."; 
+                msgTimer = 2; 
+                return; 
+            }
+            
+            LinkedList<Card> cards = columns[from].removeCards(startIdx);
+            columns[from].removeCardsRange(startIdx);
+            columns[to].addCards(cards);
+            columns[from].flipTopCard();
+            moves++;
+            checkComplete();
         }
-
-        int startIdx = columns[fromCol].size() - numCards;
-        if (startIdx < 0) {
-            cout << "Not enough cards in column!\n";
-            return;
-        }
-
-        if (!columns[fromCol].canPlaceCards(startIdx)) {
-            cout << "Cards are not in valid descending sequence!\n";
-            return;
-        }
-
-        Card movingCard = columns[fromCol].removeCards(startIdx).getFront();
-
-        if (!columns[toCol].isEmpty()) {
-            Card targetCard = columns[toCol].getTopCard();
-            if (!movingCard.canPlaceOn(targetCard)) {
-                cout << "Cannot place cards - rank must be one less!\n";
-                return;
+    }
+    
+    void checkComplete() {
+        bool foundSequence = true;
+        
+        while (foundSequence) {
+            foundSequence = false;
+            
+            for (int i = 0; i < 10; i++) {
+                if (columns[i].checkAndRemoveCompleteSequence()) {
+                    completedSeq++;
+                    foundSequence = true;
+                    
+                    msg = TextFormat("Sequence removed from column %d! Total: %d/8", i+1, completedSeq);
+                    msgTimer = 3;
+                    
+                    if (completedSeq >= 8) {
+                        gameWon = true;
+                        msg = "CONGRATULATIONS! YOU WON!";
+                        msgTimer = 5;
+                        return;
+                    }
+                    break;
+                }
             }
         }
-
-        LinkedList<Card> cardsToMove = columns[fromCol].removeCards(startIdx);
-        columns[fromCol].removeCardsRange(startIdx);
-        columns[toCol].addCards(cardsToMove);
-        columns[fromCol].flipTopCard();
-
-        checkForCompleteSequences();
     }
-
-    void checkForCompleteSequences() {
+    
+    void handleInput() {
+        Vector2 mp = GetMousePosition();
+        
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            if (CheckCollisionPointRec(mp, {20,20,70,90})) { 
+                dealFromStock(); 
+                return; 
+            }
+            
+            for (int c = 0; c < 10; c++) {
+                int x = 120 + c * 90;
+                int y = 150;
+                
+                if (!columns[c].isEmpty()) {
+                    for (int cd = columns[c].size()-1; cd >= 0; cd--) {
+                        if (CheckCollisionPointRec(mp, {(float)x, (float)(y+cd*25), 70, 90})) {
+                            Card clickedCard = columns[c].getCardAt(cd);
+                            
+                            if (selCol == -1) {
+                                if (clickedCard.isFaceUp()) {
+                                    selCol = c;
+                                    selCard = cd;
+                                }
+                            } else {
+                                int numCards = columns[selCol].size() - selCard;
+                                moveCards(selCol, c, numCards);
+                                selCol = selCard = -1;
+                            }
+                            break;
+                        }
+                    }
+                } else {
+                    if (CheckCollisionPointRec(mp, {(float)x, (float)y, 70, 90}) && selCol != -1) {
+                        int numCards = columns[selCol].size() - selCard;
+                        moveCards(selCol, c, numCards);
+                        selCol = selCard = -1;
+                    }
+                }
+            }
+        }
+        
+        if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
+            selCol = selCard = -1;
+        }
+        
+        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S)) {
+            if (save()) { msg = "Game saved successfully!"; msgTimer = 2; }
+        }
+    }
+    
+    void update(float dt) { 
+        if (msgTimer > 0) msgTimer -= dt;
+    }
+    
+    void draw() {
+        DrawTexturePro(bg, {0,0,(float)bg.width,(float)bg.height}, 
+                      {0,0,1020,750}, {0,0}, 0, WHITE);
+        
+        DrawTextWithShadow("SPIDER SOLITAIRE", 290, 15, 38, Color{0,0,0,200}, Color{255,215,0,255});
+        
+        DrawRectangle(660, 20, 160, 32, Color{139,0,0,230});
+        DrawRectangleLinesEx({660.0f, 20.0f, 160.0f, 32.0f}, 2.0f, Color{255,215,0,255});
+        DrawTextWithShadow(TextFormat("Sequences: %d/8", completedSeq), 670, 26, 20, Color{0,0,0,180}, Color{255,255,255,255});
+        
+        DrawRectangle(660, 60, 160, 28, Color{100,0,0,230});
+        DrawRectangleLinesEx({660.0f, 60.0f, 160.0f, 28.0f}, 2.0f, Color{255,215,0,200});
+        DrawTextWithShadow(TextFormat("Moves: %d", moves), 690, 64, 18, Color{0,0,0,180}, YELLOW);
+        
+        stock.draw(20, 20, cardBack);
+        DrawTextWithShadow("Stock", 26, 117, 16, Color{0,0,0,200}, WHITE);
+        
         for (int i = 0; i < 10; i++) {
-            if (columns[i].checkCompleteSequence()) {
-                completedSequences++;
-                cout << "Complete sequence removed! Total: " << completedSequences << "/8\n";
-            }
+            columns[i].draw(120 + i*90, 150, i+1, selCol==i, selCard, cardImg, cardBack);
+        }
+        
+        if (msgTimer > 0) {
+            int w = MeasureText(msg.c_str(), 20);
+            DrawRectangle(510-w/2-15, 505, w+30, 38, Color{0,0,0,230});
+            DrawRectangleLinesEx({(float)(510-w/2-15), 505.0f, (float)(w+30), 38.0f}, 2.0f, Color{255,215,0,255});
+            DrawTextWithShadow(msg.c_str(), 510-w/2, 513, 20, Color{0,0,0,180}, WHITE);
+        }
+        
+        DrawTextWithShadow("Left Click: Select/Move  |  Right Click: Cancel  |  Ctrl+S: Save  |  ESC: Menu", 
+                 120, 722, 15, Color{0,0,0,200}, Color{200,200,200,255});
+        
+        if (gameWon) {
+            DrawRectangle(0, 0, 1020, 750, Color{0,0,0,230});
+            DrawTextWithShadow("CONGRATULATIONS!", 260, 290, 48, Color{0,0,0,255}, Color{255,215,0,255});
+            DrawTextWithShadow("YOU WON THE GAME!", 310, 350, 38, Color{0,0,0,255}, YELLOW);
+            DrawTextWithShadow(TextFormat("Total Moves: %d", moves), 390, 410, 26, Color{0,0,0,255}, WHITE);
+            DrawTextWithShadow("Press ESC to return to menu", 350, 460, 22, Color{0,0,0,255}, Color{180,180,180,255});
         }
     }
-
-    void play() {
-        string command;
-
-        while (!isGameWon()) {
-            displayGame();
-            
-            cout << "\nCommands:\n";
-            cout << "  move <from> <to> <num>  - Move cards\n";
-            cout << "  deal                    - Deal from stock\n";
-            cout << "  quit                    - Exit game\n";
-            cout << "\nEnter command: ";
-            
-            cin >> command;
-
-            if (command == "move") {
-                int from, to, num;
-                cin >> from >> to >> num;
-                moveCards(from, to, num);
-            }
-            else if (command == "deal") {
-                dealFromStock();
-            }
-            else if (command == "quit") {
-                cout << "Thanks for playing!\n";
-                return;
-            }
-            else {
-                cout << "Invalid command!\n";
-                cin.clear();
-                cin.ignore(10000, '\n');
-            }
-        }
-
-        displayGame();
-        cout << "\n🎉 CONGRATULATIONS! YOU WON! 🎉\n";
-    }
+    
+    bool isWon() const { return gameWon; }
 };
