@@ -44,22 +44,17 @@ public:
     
     bool checkAndRemoveCompleteSequence() {
         if (cards.size() < 13) return false;
-        
-        // Check all possible positions for K-A sequence
         for (int startIdx = 0; startIdx <= cards.size() - 13; startIdx++) {
             Node<Card>* kingNode = cards.getNodeAt(startIdx);
-            
-            // Must start with King (rank 13)
+        
             if (!kingNode || !kingNode->data.isFaceUp() || kingNode->data.getRank() != 13) 
                 continue;
             
             bool validSeq = true;
             
-            // Check if next 12 cards form K->Q->J->...->A sequence
-            // Since all cards are same suit, no need to check suit
             for (int i = 0; i < 13; i++) {
                 Node<Card>* node = cards.getNodeAt(startIdx + i);
-                int expectedRank = 13 - i;  // K=13, Q=12, ..., A=1
+                int expectedRank = 13 - i;  
                 
                 if (!node || !node->data.isFaceUp() || 
                     node->data.getRank() != expectedRank) {
@@ -69,10 +64,8 @@ public:
             }
             
             if (validSeq) {
-                // Remove the complete sequence
                 cards.removeRange(startIdx, startIdx + 12);
                 
-                // Flip the new top card if column is not empty
                 if (!isEmpty()) flipTopCard();
                 
                 return true;
