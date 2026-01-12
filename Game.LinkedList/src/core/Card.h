@@ -1,45 +1,39 @@
 #pragma once
 #include <string>
-#include "raylib.h"
 using namespace std;
 
 class Card {
 private:
     int rank;
-    int suit;
     bool faceUp;
+
 public:
-    Card() : rank(0), suit(0), faceUp(false) {}
-    Card(int r, int s) : rank(r), suit(s), faceUp(false) {}
+    Card() : rank(0), faceUp(false) {}
     
+    Card(int r) : rank(r), faceUp(false) {}
+
     int getRank() const { return rank; }
-    int getSuit() const { return suit; }
+    
     bool isFaceUp() const { return faceUp; }
+    
     void flip() { faceUp = true; }
     
-    bool canPlaceOn(const Card& other) const { 
-        return (rank == other.rank - 1); 
+    void flipDown() { faceUp = false; }
+
+    string toString() const {
+        if (!faceUp) return "[##]";
+        
+        string rankStr;
+        if (rank == 1) rankStr = "A";
+        else if (rank == 11) rankStr = "J";
+        else if (rank == 12) rankStr = "Q";
+        else if (rank == 13) rankStr = "K";
+        else rankStr = to_string(rank);
+        
+        return "[" + rankStr + "]";
     }
-    
-    void draw(int x, int y, bool selected, Texture2D* cardImages, Texture2D cardBack) const {
-        Rectangle cardRect = {(float)x, (float)y, 70, 90};
-        
-        if (!faceUp) {
-            DrawTexturePro(cardBack, {0, 0, (float)cardBack.width, (float)cardBack.height}, 
-                          cardRect, {0, 0}, 0, WHITE);
-        } else {
-            // For single suit, use only rank-1 as index
-            int imgIdx = rank - 1;
-            if (imgIdx >= 0 && imgIdx < 13 && cardImages[imgIdx].id) {
-                DrawTexturePro(cardImages[imgIdx], 
-                              {0, 0, (float)cardImages[imgIdx].width, (float)cardImages[imgIdx].height},
-                              cardRect, {0, 0}, 0, WHITE);
-            } else {
-                DrawRectangleRec(cardRect, WHITE);
-                DrawRectangleLinesEx(cardRect, 2, BLACK);
-            }
-        }
-        
-        if (selected) DrawRectangleLinesEx(cardRect, 3, YELLOW);
+
+    bool canPlaceOn(const Card& other) const {
+        return (this->rank == other.rank - 1);
     }
 };
