@@ -40,7 +40,7 @@ Our implementation includes:
 - Undo/redo actions use multiple stacks.
 
 ### ✔ **2. Queue (For dealing new rows — optional)**  
-- A queue-like structure is used to manage remaining undealt cards.
+- A queue-like structure manages remaining undealt cards.
 
 ### ✔ **3. Dynamic Arrays (`std::vector`)**  
 - Used in columns and deck because card counts change dynamically.
@@ -71,62 +71,61 @@ Our implementation includes:
 We structured the game using **industry-standard engineering practices**:
 
 ### 🔸 **Modular Architecture**
-
+- Each module is independent and reusable.
 
 ### 🔸 **Team Parallelization**
-Every module was designed so each team member could work **independently** without blocking others.
+- Each member works on separate modules without blocking others.
 
 ### 🔸 **Interface-first Development**
-We first froze:
-- Class names  
-- Method signatures  
-- Data structures  
-
-This allowed us to code simultaneously — exactly how real-world teams operate.
+- Class names, method signatures, and data structures were frozen early.
+- Allowed simultaneous coding with minimal conflicts.
 
 ### 🔸 **DSA-heavy Backend + Clean GUI Layer**
-- Logic is completely separated from GUI.
-- Raylib only redraws states; no game logic inside rendering.
+- Game logic is completely separated from rendering.
+- Raylib only redraws game states.
 
 ---
 
 # 🧩 **Class Architecture (High-Level Overview)**
-
+- **Card** — Represents a single card (rank, suit, face-up/face-down).  
+- **Deck** — Manages card shuffling, dealing, and stockpile.  
+- **Column** — Stack-based structure for cards on the table.  
+- **Game** — Controls main game loop, moves, and validation.  
+- **GUIManager** — Handles all Raylib rendering and input.
 
 ---
 
 # 📂 **Folder Structure**
+## Using Linked list
+Game.LinkedList/  
+│  
+├─ src/  
+│ ├─ core/   
+│ │ ├─ Card.h  
+│ │ ├─ Deck.h  
+│ │ ├─ Column.h  
+│ │ ├─ LinkedList.h  
+│ │ ├─ StockPile.h  
+│ │ ├─ SpiderSolitaire.h  
+│ └─ main.cpp  
+├─ Deck Images/ # Card images  
+└─ README.md  
+## Using Queue
+Game.Queue/  
+│  
+└─ main.cpp
+## Using Stack
+Game.Stack/  
+│  
+└─ main.cpp
 
 ---
 
 # 🚀 **How to Run the Project**
-1. Install **Raylib**  
-2. Compile using g++ or CMake  
-3. Run executable  
-4. Enjoy the game 🎮
+1. Install **Raylib** for your platform.
+   - For Linux: `sudo apt install libraylib-dev`  
+   - For Windows: download Raylib installer or use vcpkg.  
 
----
-
-# 📸 **Screenshots**
-(Will be added as soon as GUI is completed)
-
----
-
-# 🏆 **Conclusion**
-This project allowed us to demonstrate:
-
-- Strong understanding of **DSA fundamentals**  
-- Real application of **OOP**  
-- Building an actual **GUI game in C++**  
-- **Team collaboration**, version control, and modular architecture  
-
-Spider Solitaire is a perfect blend of:
-> **Algorithmic thinking + Data Structures + Game Development**
-
-We proudly present this as our **3rd Semester DSA Project**.
-
----
-
-# 💙 **Thank You!**
-If you like this project or want to contribute, feel free to reach out.
-
+2. **Clone the Repository**
+   ```bash
+   git clone https://github.com/SundeepKumar07/NAMAL_COMPLAINT_PORTAL
