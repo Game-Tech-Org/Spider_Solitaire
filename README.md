@@ -45,7 +45,7 @@ Our implementation includes:
 ### ✔ **3. Dynamic Arrays (`std::vector`)**  
 - Used in columns and deck because card counts change dynamically.
 
-### ✔ **4. Custom Linked Structure (Optional / Future)**  
+### ✔ **4. Custom Linked Structure (implement stack and queue using this custom linked structure)**  
 - Columns may support linked-subsequence moves.
 
 ### ✔ **5. Game State Machine**  
@@ -86,29 +86,30 @@ We structured the game using **industry-standard engineering practices**:
 
 ---
 
-# 🧩 **Class Architecture (High-Level Overview)**
-- **Card** — Represents a single card (rank, suit, face-up/face-down).  
-- **Deck** — Manages card shuffling, dealing, and stockpile.  
-- **Column** — Stack-based structure for cards on the table.  
-- **Game** — Controls main game loop, moves, and validation.  
-- **GUIManager** — Handles all Raylib rendering and input.
+# 🧩 **Class Architecture using .h files (High-Level Overview)**
+- **LinkedList.h** — Provide Linked list data structure.  
+- **Card.h** — Represents a single card (rank, suit, face-up/face-down).    
+- **Column.h** — Stack-based structure for cards on the table using linked list.  
+- **StockPiles.h** — Queue based for deal logic in Game.  
+- **SpiderSolitaire.h** — Deals with the main logic and validation of the Game.  
+- **Main.cpp** — Handles integration of the classes and provide executable game.
 
 ---
 
 # 📂 **Folder Structure**
 ## Using Linked list
 Game.LinkedList/  
+├─ Deck Images/ # Card images  
 │  
 ├─ src/  
 │ ├─ core/   
 │ │ ├─ Card.h  
-│ │ ├─ Deck.h  
 │ │ ├─ Column.h  
 │ │ ├─ LinkedList.h  
 │ │ ├─ StockPile.h  
 │ │ ├─ SpiderSolitaire.h  
-│ └─ main.cpp  
-├─ Deck Images/ # Card images  
+│ └─ main.cpp   
+|  
 └─ README.md  
 ## Using Queue
 Game.Queue/  
